@@ -140,20 +140,38 @@ function App() {
         ref={mountRef}
         style={{ width: '100%', height: '100%' }}
       />
-      <button
+      {!isRunning && (
+        <button
+          onClick={toggleRunning}
+          style={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            zIndex: 10,
+            padding: '10px 20px',
+            cursor: 'pointer',
+          }}
+        >
+          Oyuna Başla
+        </button>
+      )}
+
+     {isRunning &&  <button
         onClick={toggleRunning}
         style={{
+          width: "150px",
+          height: "20px",
           position: 'absolute',
-          top: '50%',
-          left: '50%',
-          transform: 'translate(-50%, -50%)',
+          top: '2%',
+          left: '2%',
+          transform: 'translate(-2%, -2%)',
           zIndex: 10,
-          padding: '10px 20px',
           cursor: 'pointer',
         }}
       >
-        Oyuna Başla
-      </button>
+        Oyunu Durdur
+      </button>}
     </div>
   )
 }
