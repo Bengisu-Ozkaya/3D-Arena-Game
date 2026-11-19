@@ -12,6 +12,10 @@ function App() {
     SetIsRunning(!isRunning)
     isRunningAnimRef.current = !isRunning
   }
+  
+  //Skor
+  const [score, setScore] = useState(0)
+
 
   useEffect(() => {
     if (!mountRef.current) return
@@ -49,6 +53,15 @@ function App() {
     const character = new THREE.Mesh(characterGeo, characterMat)
     scene.add(character)
 
+    const coinGeo = new THREE.BoxGeometry(0.2, 0.2, 0.2)
+    const coinMat = new THREE.MeshBasicMaterial({ color: '#f2ff00' })
+    const coin = new THREE.Mesh(coinGeo, coinMat)
+    coin.position.x = 1
+    coin.position.y = 1
+
+    scene.add(coin)
+
+
     //Klavye Kontrolü
     const keys = {}
     const handleKeyDown = (e) => {
@@ -68,6 +81,8 @@ function App() {
     let animationFrameId
     /*let speed = 0.03
     let rotationSpeed = 0.03*/
+
+    let isCoinCollected = false
 
     const animate = () => {
       animationFrameId = requestAnimationFrame(animate)
@@ -89,6 +104,8 @@ function App() {
       if (isRunningAnimRef.current) {
         const moveSpeed = 0.08 // Karakterin hareket hızı
 
+        coin.rotation.y += 0.02
+
         // Yukarı / Aşağı
         if (keys['w'] || keys['KeyW'] || keys['ArrowUp']) {
           character.position.y += moveSpeed
@@ -104,7 +121,15 @@ function App() {
         if (keys['q'] || keys['KeyQ']) character.rotation.y -= moveSpeed
         if (keys['e'] || keys['KeyE']) character.rotation.y += moveSpeed
 
+        //coin ile character arası mesafe
+        const distance = character.position.distanceTo(coin.position)
+        if (distance < 0.7 && !isCoinCollected) {
+          isCoinCollected = true
+          setScore(prev => prev + 1)
+          scene.remove(coin)
+        }
       }
+
 
 
       renderer.render(scene, camera) //Sahneyi kameranın gözünden görme
@@ -157,7 +182,7 @@ function App() {
         </button>
       )}
 
-     {isRunning &&  <button
+      {isRunning && <button
         onClick={toggleRunning}
         style={{
           width: "150px",
@@ -171,7 +196,23 @@ function App() {
         }}
       >
         Oyunu Durdur
-      </button>}
+      </button>
+      }
+
+      {isRunning && <p 
+      style={{
+          width: "150px",
+          height: "20px",
+          position: 'absolute',
+          top: '35px',
+          right: '10px',
+          transform: 'translate(-50%, -50%)',
+          zIndex: 10,
+          color: '#ffffff'
+        }}>{score}</p>}
+      
+
+      
     </div>
   )
 }
