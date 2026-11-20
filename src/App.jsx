@@ -12,7 +12,7 @@ function App() {
     SetIsRunning(!isRunning)
     isRunningAnimRef.current = !isRunning
   }
-  
+
   //Skor
   const [score, setScore] = useState(0)
 
@@ -35,43 +35,55 @@ function App() {
     mountRef.current.appendChild(renderer.domElement)
 
     const camera = new THREE.PerspectiveCamera(55, (width / height), 0.1, 1000) //perpektif kamera oluşturma
-    camera.position.z = 5; //Varsayılan olark (0,0,0) konumunda oluşturulduğu için sahnedeki şeyleri görebilmke için pozisyonunu değiştirdik
+    camera.position.z = 4; //Varsayılan olark (0,0,0) konumunda oluşturulduğu için sahnedeki şeyleri görebilmke için pozisyonunu değiştirdik
+    camera.position.y = 1;
 
-    /*const geometry = new THREE.BoxGeometry(1, 1, 1) //kenarları 1 birim olan küp şekli
-    const material = new THREE.MeshBasicMaterial({ color: '#ef3e11' }) //Küpün materyali (rengi,parlaklığı,matlığı...)
-    const cube = new THREE.Mesh(geometry, material) //Şekli Materyal ile birleştirme
-  
-    const geometry2 = new THREE.BoxGeometry(1, 1, 1) //kenarları 1 birim olan küp şekli
-    const material2 = new THREE.MeshBasicMaterial({ color: '#12a182' }) //Küpün materyali (rengi,parlaklığı,matlığı...)
-    const cube2 = new THREE.Mesh(geometry2, material2) //Şekli Materyal ile birleştirme
-  
-    scene.add(cube)
-    scene.add(cube2)*/
-
-    const characterGeo = new THREE.BoxGeometry(1, 1, 1)
+    //player
+    const characterGeo = new THREE.BoxGeometry(0.5, 1, 0.5)
     const characterMat = new THREE.MeshBasicMaterial({ color: '#2468ac' })
     const character = new THREE.Mesh(characterGeo, characterMat)
+
+    //player collider
+    const characterBox = new THREE.Box3()
+
+    character.position.y = -0.5
     scene.add(character)
 
+    //coin
     const coinGeo = new THREE.BoxGeometry(0.2, 0.2, 0.2)
     const coinMat = new THREE.MeshBasicMaterial({ color: '#f2ff00' })
     const coin = new THREE.Mesh(coinGeo, coinMat)
-    coin.position.x = 1
-    coin.position.y = 1
+
+    coin.position.x = Math.random() * 4 - 2
+    coin.position.y = Math.random() - 2
 
     scene.add(coin)
+
+    //zemin
+    const floorGeo = new THREE.BoxGeometry(10, 0, 15)
+    const floorMat = new THREE.MeshBasicMaterial({ color: '#00ff2a' })
+    const floor = new THREE.Mesh(floorGeo, floorMat)
+    floor.position.z = -2
+    floor.position.y = -1
+    scene.add(floor)
+
+    const wall1 = createWallPrefab(4, 2, 0.5, -2, 0, -1, '#112548')
+    const wall2 = createWallPrefab(2, 1, 0.5, 2, -0.5, -5, '#7865ae')
+
+    scene.add(wall1)
+    scene.add(wall2)
+
 
 
     //Klavye Kontrolü
     const keys = {}
     const handleKeyDown = (e) => {
-      console.log("TUŞA BASILDI: ", e.code)
       keys[e.key.toLowerCase()] = true
-      keys[e.code] = true // <-- Bunu ekle (KeyW, KeyA, ArrowUp gibi fiziksel tuş kodunu tutar)
+      keys[e.code] = true
     }
     const handleKeyUp = (e) => {
       keys[e.key.toLowerCase()] = false
-      keys[e.code] = false // <-- Bunu ekle
+      keys[e.code] = false
     }
 
     window.addEventListener('keydown', handleKeyDown)
@@ -79,39 +91,42 @@ function App() {
 
 
     let animationFrameId
-    /*let speed = 0.03
-    let rotationSpeed = 0.03*/
-
-    let isCoinCollected = false
 
     const animate = () => {
       animationFrameId = requestAnimationFrame(animate)
-      /*if (isRunningAnimRef.current) {
-        cube.rotation.y += rotationSpeed
-        cube.rotation.x += rotationSpeed
-        cube2.rotation.x += rotationSpeed
-  
-        cube.position.x += speed
-        cube2.position.y += speed
-  
-        if (cube.position.x >= 1.5 || cube2.position.y >= 1.5) {
-          speed = -0.03
-        } else if (cube.position.x <= -1.5 || cube2.position.y <= -1.5) {
-          speed = 0.03
-        }
-      }*/
 
       if (isRunningAnimRef.current) {
-        const moveSpeed = 0.08 // Karakterin hareket hızı
+        followPlayer(camera, character)
 
+        //player
+        const moveSpeed = 0.08
+        const prevX = character.position.x
+        const prevZ = character.position.z
+
+        //coin
         coin.rotation.y += 0.02
 
+        //player hareket alanı sınırı
+        if (character.position.x >= 3.5) {
+          character.position.x = 3.5
+        }
+        if (character.position.x <= -3.5) {
+          character.position.x = -3.5
+        }
+        if (character.position.y >= 2) {
+          character.position.y = 2
+        }
+        if (character.position.y <= -1) {
+          character.position.y = -1
+        }
+
+        //player hareket
         // Yukarı / Aşağı
         if (keys['w'] || keys['KeyW'] || keys['ArrowUp']) {
-          character.position.y += moveSpeed
+          character.position.z -= moveSpeed
           console.log("KARAKTERİN POZİSYONU: ", character.position.y)
         }
-        if (keys['s'] || keys['KeyS'] || keys['ArrowDown']) character.position.y -= moveSpeed
+        if (keys['s'] || keys['KeyS'] || keys['ArrowDown']) character.position.z += moveSpeed
 
         // Sola / Sağa
         if (keys['a'] || keys['KeyA'] || keys['ArrowLeft']) character.position.x -= moveSpeed
@@ -121,16 +136,23 @@ function App() {
         if (keys['q'] || keys['KeyQ']) character.rotation.y -= moveSpeed
         if (keys['e'] || keys['KeyE']) character.rotation.y += moveSpeed
 
+
+        characterBox.setFromObject(character) //collider, character nesnesini her frame de takip etsin diye
+        if (characterBox.intersectsBox(wall1.box) || characterBox.intersectsBox(wall2.box)) {
+          // Çarptı! İçinden geçememesi için pozisyonunu eski yerine geri al:
+          character.position.x = prevX
+          character.position.z = prevZ
+        }
+
         //coin ile character arası mesafe
         const distance = character.position.distanceTo(coin.position)
-        if (distance < 0.7 && !isCoinCollected) {
-          isCoinCollected = true
+        if (distance < 0.7) {
           setScore(prev => prev + 1)
-          scene.remove(coin)
+
+          coin.position.x = Math.random() * 2 - 1
+          coin.position.y = Math.random() * 2 - 1
         }
       }
-
-
 
       renderer.render(scene, camera) //Sahneyi kameranın gözünden görme
     }
@@ -153,7 +175,7 @@ function App() {
     <div
       style={{
         position: 'relative',
-        width: '400px',
+        width: '720px',
         height: '400px',
         margin: '50px auto',
         border: '2px solid #555',
@@ -199,8 +221,8 @@ function App() {
       </button>
       }
 
-      {isRunning && <p 
-      style={{
+      {isRunning && <p
+        style={{
           width: "150px",
           height: "20px",
           position: 'absolute',
@@ -210,13 +232,32 @@ function App() {
           zIndex: 10,
           color: '#ffffff'
         }}>{score}</p>}
-      
 
-      
+
+
     </div>
   )
 }
 
+function createWallPrefab(sizeX, sizeY, sizeZ, posX, posY, posZ, colors) {
+  const wallPrefabGeo = new THREE.BoxGeometry(sizeX, sizeY, sizeZ)
+  const wallPrefabMat = new THREE.MeshBasicMaterial({ color: colors })
+  const wallPrefab = new THREE.Mesh(wallPrefabGeo, wallPrefabMat)
+  wallPrefab.position.set(posX, posY, posZ)
+
+  wallPrefab.box = new THREE.Box3().setFromObject(wallPrefab)
+
+  return wallPrefab
+}
+
+function followPlayer(cam, player) {
+  // Kamerayı karakterin pozisyonuna göre konumlandırma
+  cam.position.x = player.position.x
+  cam.position.y = player.position.y + 1.5  
+  cam.position.z = player.position.z + 4    
+
+  cam.lookAt(player.position) //kameranın yüzünün player'a bakması için 
+}
 
 
 export default App
