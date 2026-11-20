@@ -16,6 +16,11 @@ function App() {
   //Skor
   const [score, setScore] = useState(0)
 
+  //Silah
+  let isGunCollected = false
+  //Silah cephanesi
+  const [cephane, setCephane] = useState(0)
+
 
   useEffect(() => {
     if (!mountRef.current) return
@@ -42,6 +47,7 @@ function App() {
     const characterGeo = new THREE.BoxGeometry(0.5, 1, 0.5)
     const characterMat = new THREE.MeshBasicMaterial({ color: '#2468ac' })
     const character = new THREE.Mesh(characterGeo, characterMat)
+    character.position.z = 6
 
     //player collider
     const characterBox = new THREE.Box3()
@@ -49,21 +55,22 @@ function App() {
     character.position.y = -0.5
     scene.add(character)
 
-    //coin
-    const coinGeo = new THREE.BoxGeometry(0.2, 0.2, 0.2)
-    const coinMat = new THREE.MeshBasicMaterial({ color: '#f2ff00' })
-    const coin = new THREE.Mesh(coinGeo, coinMat)
+    //gun
+    const gunGeo = new THREE.CylinderGeometry(0.3, 0.3, 0.05, 32)
+    const gunMat = new THREE.MeshBasicMaterial({ color: '#f2ff00' })
+    const gun = new THREE.Mesh(gunGeo, gunMat)
 
-    coin.position.x = Math.random() * 4 - 2
-    coin.position.y = Math.random() - 2
+    gun.rotation.x = Math.PI / 2
+    let gunBaseY = -0.5
+    gun.position.x = Math.random() * 4 - 2
+    gun.position.y = gunBaseY
 
-    scene.add(coin)
+    scene.add(gun)
 
     //zemin
     const floorGeo = new THREE.BoxGeometry(10, 0, 15)
     const floorMat = new THREE.MeshBasicMaterial({ color: '#00ff2a' })
     const floor = new THREE.Mesh(floorGeo, floorMat)
-    floor.position.z = -2
     floor.position.y = -1
     scene.add(floor)
 
@@ -78,6 +85,7 @@ function App() {
     //Klavye Kontrolü
     const keys = {}
     const handleKeyDown = (e) => {
+      if (e.code === 'Space') e.preventDefault()
       keys[e.key.toLowerCase()] = true
       keys[e.code] = true
     }
@@ -100,24 +108,26 @@ function App() {
 
         //player
         const moveSpeed = 0.08
+
         const prevX = character.position.x
         const prevZ = character.position.z
 
-        //coin
-        coin.rotation.y += 0.02
+        //gun
+        gun.rotation.y += 0.03 
+        gun.position.y = gunBaseY + Math.sin(Date.now() * 0.004) * 0.15
 
         //player hareket alanı sınırı
-        if (character.position.x >= 3.5) {
-          character.position.x = 3.5
+        if (character.position.x >= 4) {
+          character.position.x = 4
         }
-        if (character.position.x <= -3.5) {
-          character.position.x = -3.5
+        if (character.position.x <= -4) {
+          character.position.x = -4
         }
-        if (character.position.y >= 2) {
-          character.position.y = 2
+        if (character.position.z >= 7) {
+          character.position.z = 7
         }
-        if (character.position.y <= -1) {
-          character.position.y = -1
+        if (character.position.z <= -7) {
+          character.position.z = -7
         }
 
         //player hareket
@@ -136,6 +146,21 @@ function App() {
         if (keys['q'] || keys['KeyQ']) character.rotation.y -= moveSpeed
         if (keys['e'] || keys['KeyE']) character.rotation.y += moveSpeed
 
+        // Silah atış
+        if (keys['Space'] && isGunCollected) {
+          setCephane(prev => {
+            if (prev > 0) {
+              console.log("Silah Ateşlendi! Kalan Mermi:", prev - 1)
+              return prev - 1
+            } else {
+              console.log("Mermi bitti!")
+              return 0
+            }
+          })
+          keys['Space'] = false // Her basışta tek tek ateş etmesi için
+        }
+        
+
 
         characterBox.setFromObject(character) //collider, character nesnesini her frame de takip etsin diye
         if (characterBox.intersectsBox(wall1.box) || characterBox.intersectsBox(wall2.box)) {
@@ -144,13 +169,13 @@ function App() {
           character.position.z = prevZ
         }
 
-        //coin ile character arası mesafe
-        const distance = character.position.distanceTo(coin.position)
-        if (distance < 0.7) {
-          setScore(prev => prev + 1)
-
-          coin.position.x = Math.random() * 2 - 1
-          coin.position.y = Math.random() * 2 - 1
+        //gun ile character arası mesafe
+        const distance = character.position.distanceTo(gun.position)
+        if (distance < 0.7 && !isGunCollected && (keys['f'] || keys['KeyF'])) {
+          isGunCollected = true
+          console.log("Silah alındı")
+          setCephane(30)
+          scene.remove(gun)
         }
       }
 
@@ -231,7 +256,7 @@ function App() {
           transform: 'translate(-50%, -50%)',
           zIndex: 10,
           color: '#ffffff'
-        }}>{score}</p>}
+        }}>{cephane}</p>}
 
 
 
@@ -254,7 +279,7 @@ function followPlayer(cam, player) {
   // Kamerayı karakterin pozisyonuna göre konumlandırma
   cam.position.x = player.position.x
   cam.position.y = player.position.y + 1.5  
-  cam.position.z = player.position.z + 4    
+  cam.position.z = player.position.z + 3    
 
   cam.lookAt(player.position) //kameranın yüzünün player'a bakması için 
 }
