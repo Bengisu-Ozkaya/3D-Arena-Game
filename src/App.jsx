@@ -62,7 +62,8 @@ function App() {
 
     gun.rotation.x = Math.PI / 2
     let gunBaseY = -0.5
-    gun.position.x = Math.random() * 4 - 2
+    gun.position.x = -1
+    gun.position.z = 5
     gun.position.y = gunBaseY
 
     scene.add(gun)
@@ -74,11 +75,18 @@ function App() {
     floor.position.y = -1
     scene.add(floor)
 
-    const wall1 = createWallPrefab(4, 2, 0.5, -2, 0, -1, '#112548')
+    const wall1 = createWallPrefab(4, 2, 0.5, -2, 0, 4, '#112548')
     const wall2 = createWallPrefab(2, 1, 0.5, 2, -0.5, -5, '#7865ae')
+    const wall3 = createWallPrefab(2, 1, 0.5, 0, -0.5, 0, '#a3309f')
+    const wall4 = createWallPrefab(4, 2, 0.5, -3, 0, -5, '#189c91')
+
+
 
     scene.add(wall1)
     scene.add(wall2)
+    scene.add(wall3)
+    scene.add(wall4)
+
 
 
 
@@ -163,7 +171,7 @@ function App() {
 
 
         characterBox.setFromObject(character) //collider, character nesnesini her frame de takip etsin diye
-        if (characterBox.intersectsBox(wall1.box) || characterBox.intersectsBox(wall2.box)) {
+        if (characterBox.intersectsBox(wall1.box) || characterBox.intersectsBox(wall2.box) || characterBox.intersectsBox(wall3.box) || characterBox.intersectsBox(wall4.box)) {
           // Çarptı! İçinden geçememesi için pozisyonunu eski yerine geri al:
           character.position.x = prevX
           character.position.z = prevZ
