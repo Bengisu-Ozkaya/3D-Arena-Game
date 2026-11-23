@@ -52,7 +52,7 @@ function App() {
     camera.lookAt(player.position)
 
     // 6. Player hareket fonksiyonu bağlama
-    const playerController = new PlayerController(player, camera)
+    const playerController = new PlayerController(player, camera, renderer.domElement)
 
     let animationFrameId
 
@@ -131,15 +131,6 @@ function App() {
       )}
     </div>
   )
-}
-
-function followPlayer(cam, player) {
-  // Kamerayı karakterin pozisyonuna göre konumlandırma
-  cam.position.x = player.position.x
-  cam.position.y = player.position.y + 1.5
-  cam.position.z = player.position.z + 3
-
-  cam.lookAt(player.position) //kameranın yüzünün player'a bakması için 
 }
 
 export default App
