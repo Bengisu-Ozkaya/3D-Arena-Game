@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react"
 import * as THREE from "three"
 import { ArenaMap } from "./game/world/ArenaMap"
+import { PlayerController } from "./game/controls/PlayerController"
 
 function App() {
   const mountRef = useRef(null) // HTML'de canvas'ın içine konacağı <div>
@@ -50,12 +51,18 @@ function App() {
     // Kamerayı oyuncuya doğru baksın
     camera.lookAt(player.position)
 
+    // 6. Player hareket fonksiyonu bağlama
+    const playerController = new PlayerController(player, camera)
+
     let animationFrameId
 
     const animate = () => {
       animationFrameId = requestAnimationFrame(animate)
 
-      // Oyun çalışmasa bile sahneyi en azından 1 kez çizmesi için:
+      if (isRunningAnimRef.current) {
+        playerController.update()
+      }
+
       renderer.render(scene, camera)
     }
 
@@ -66,6 +73,7 @@ function App() {
       cancelAnimationFrame(animationFrameId)
       arenaMap.dispose()
       renderer.dispose()
+      playerController.dispose()
       if (mountRef.current) {
         mountRef.current.innerHTML = ''
       }
