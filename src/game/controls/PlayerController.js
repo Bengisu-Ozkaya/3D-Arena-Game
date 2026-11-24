@@ -42,6 +42,68 @@ export class PlayerController {
 
         window.addEventListener('keydown', this.onKeyDown);
         window.addEventListener('keyup', this.onKeyUp);
+
+        // --- MOBİL DOKUNMATİK KAMERA KONTROLÜ (SAĞ EL) ---
+        this.touchLookId = null; // Sadece sağ ele ait parmağın ID'si
+        this.lastTouchX = 0;
+        this.lastTouchY = 0;
+        this.lookSensitivity = 0.003; // Dokunmatik bakış hassasiyeti
+
+        // Kameranın düzgün dönmesi için Euler dönüş sırasını YXZ yapıyoruz:
+        this.camera.rotation.order = 'YXZ';
+
+        this.onTouchStart = (e) => {
+            for (let i = 0; i < e.changedTouches.length; i++) {
+                const touch = e.changedTouches[i];
+                // Eğer dokunma ekranın sağ yarısındaysa (ve henüz sağ parmak yoksa):
+                if (touch.clientX > window.innerWidth / 2 && this.touchLookId === null) {
+                    this.touchLookId = touch.identifier;
+                    this.lastTouchX = touch.clientX;
+                    this.lastTouchY = touch.clientY;
+                    break;
+                }
+            }
+        };
+
+        this.onTouchMove = (e) => {
+            if (this.touchLookId === null) return;
+
+            for (let i = 0; i < e.changedTouches.length; i++) {
+                const touch = e.changedTouches[i];
+                if (touch.identifier === this.touchLookId) {
+                    const deltaX = touch.clientX - this.lastTouchX;
+                    const deltaY = touch.clientY - this.lastTouchY;
+
+                    this.lastTouchX = touch.clientX;
+                    this.lastTouchY = touch.clientY;
+
+                    // Sağa - Sola Bakış (Yaw)
+                    this.camera.rotation.y -= deltaX * this.lookSensitivity;
+
+                    // Yukarı - Aşağı Bakış (Pitch)
+                    this.camera.rotation.x -= deltaY * this.lookSensitivity;
+
+                    // Kafanın takla atmasını engellemek için sınırla (-85 ile +85 derece):
+                    const maxPitch = Math.PI / 2 - 0.05;
+                    this.camera.rotation.x = Math.max(-maxPitch, Math.min(maxPitch, this.camera.rotation.x));
+                    break;
+                }
+            }
+        };
+
+        this.onTouchEnd = (e) => {
+            for (let i = 0; i < e.changedTouches.length; i++) {
+                if (e.changedTouches[i].identifier === this.touchLookId) {
+                    this.touchLookId = null; // Sağ el parmağını çekti
+                    break;
+                }
+            }
+        };
+
+        window.addEventListener('touchstart', this.onTouchStart, { passive: false });
+        window.addEventListener('touchmove', this.onTouchMove, { passive: false });
+        window.addEventListener('touchend', this.onTouchEnd);
+        window.addEventListener('touchcancel', this.onTouchEnd);
     }
 
     // Oyun kapandığında hafızayı temizlemek için dinleyicileri kaldırıyoruz:
@@ -50,6 +112,10 @@ export class PlayerController {
         if (this.joystick) this.joystick.dispose(); // Joystick'i ekrandan kaldırır
         window.removeEventListener('keydown', this.onKeyDown);
         window.removeEventListener('keyup', this.onKeyUp);
+        window.removeEventListener('touchstart', this.onTouchStart);
+        window.removeEventListener('touchmove', this.onTouchMove);
+        window.removeEventListener('touchend', this.onTouchEnd);
+        window.removeEventListener('touchcancel', this.onTouchEnd);
     }
 
     update() {
