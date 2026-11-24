@@ -26,11 +26,13 @@ function App() {
     const arenaMap = new ArenaMap(scene)
 
     // 3. Renderer oluşturma
-    const width = mountRef.current.clientWidth
-    const height = mountRef.current.clientHeight
+    const width = window.innerWidth // Daha responsive
+    const height = window.innerHeight
 
     const renderer = new THREE.WebGLRenderer({ antialias: true })
     renderer.setSize(width, height)
+
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)) // yüksek çözünürlüklüekranlar için optimizasyon
 
     // Canvas elementini div'in içine ekliyoruz
     mountRef.current.innerHTML = ''
@@ -53,6 +55,17 @@ function App() {
 
     // 6. Player hareket fonksiyonu bağlama
     const playerController = new PlayerController(player, camera, renderer.domElement)
+
+
+    // Pencere veya telefon boyutu değiştiğinde otomatik uyum sağla:
+    const handleResize = () => {
+      const w = window.innerWidth
+      const h = window.innerHeight
+      camera.aspect = w / h
+      camera.updateProjectionMatrix() // Kameranın projeksiyon matrisini yeniler
+      renderer.setSize(w, h)
+    }
+    window.addEventListener('resize', handleResize)
 
     let animationFrameId
 
@@ -85,8 +98,8 @@ function App() {
       <div
         style={{
           position: 'relative',
-          width: '720px',
-          height: '400px',
+          width: '100vw',
+          height: '100vh',
           margin: '50px auto',
           border: '2px solid #555',
           overflow: 'hidden'
