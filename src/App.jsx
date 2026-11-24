@@ -81,55 +81,80 @@ function App() {
   }, [])
 
   return (
-    <div
-      style={{
-        position: 'relative',
-        width: '720px',
-        height: '400px',
-        margin: '50px auto',
-        border: '2px solid #555',
-        overflow: 'hidden'
-      }}
-    >
+    <>
       <div
-        ref={mountRef}
-        style={{ width: '100%', height: '100%' }}
-      />
-      {!isRunning && (
-        <button
-          onClick={toggleRunning}
+        style={{
+          position: 'relative',
+          width: '720px',
+          height: '400px',
+          margin: '50px auto',
+          border: '2px solid #555',
+          overflow: 'hidden'
+        }}
+      >
+        <div
+          ref={mountRef}
+          style={{ width: '100%', height: '100%' }}
+        />
+        {!isRunning && (
+          <button
+            onClick={toggleRunning}
+            style={{
+              position: 'absolute',
+              top: '50%',
+              left: '50%',
+              transform: 'translate(-50%, -50%)',
+              zIndex: 10,
+              padding: '10px 20px',
+              cursor: 'pointer',
+            }}
+          >
+            Oyuna Başla
+          </button>
+        )}
+
+        {isRunning && (
+          <button
+            onClick={toggleRunning}
+            style={{
+              width: "150px",
+              height: "20px",
+              position: 'absolute',
+              top: '2%',
+              left: '2%',
+              transform: 'translate(-2%, -2%)',
+              zIndex: 10,
+              cursor: 'pointer',
+            }}
+          >
+            Oyunu Durdur
+          </button>
+        )}
+      </div>
+
+      {/* Klasik Artı (+) Nişangah */}
+      {isRunning && (
+        <div
           style={{
             position: 'absolute',
             top: '50%',
             left: '50%',
             transform: 'translate(-50%, -50%)',
-            zIndex: 10,
-            padding: '10px 20px',
-            cursor: 'pointer',
+            width: '16px',
+            height: '16px',
+            pointerEvents: 'none', // ZORUNLU!
+            zIndex: 20
           }}
         >
-          Oyuna Başla
-        </button>
+          {/* Dikey çizgi */}
+          <div style={{ position: 'absolute', left: '7px', top: '0', width: '2px', height: '16px', backgroundColor: '#00ff88', boxShadow: '0 0 2px black' }} />
+          {/* Yatay çizgi */}
+          <div style={{ position: 'absolute', left: '0', top: '7px', width: '16px', height: '2px', backgroundColor: '#00ff88', boxShadow: '0 0 2px black' }} />
+        </div>
       )}
+    </>
 
-      {isRunning && (
-        <button
-          onClick={toggleRunning}
-          style={{
-            width: "150px",
-            height: "20px",
-            position: 'absolute',
-            top: '2%',
-            left: '2%',
-            transform: 'translate(-2%, -2%)',
-            zIndex: 10,
-            cursor: 'pointer',
-          }}
-        >
-          Oyunu Durdur
-        </button>
-      )}
-    </div>
+
   )
 }
 

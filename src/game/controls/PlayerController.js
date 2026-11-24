@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { PointerLockControls } from 'three/addons/controls/PointerLockControls.js';
+import { VirtualJoystick } from './VirtualJoystick.js';
 
 export class PlayerController {
     constructor(player, camera, domElement) {
@@ -25,6 +26,9 @@ export class PlayerController {
             this.player.position.z
         );
 
+        // Sanal Joystick'i oluşturup canvas'ın bulunduğu kutunun içine ekliyoruz:
+        this.joystick = new VirtualJoystick(this.domElement.parentElement || document.body);
+
         // Hangi tuşlara basıldığını tutan nesne
         this.keys = {};
 
@@ -42,40 +46,43 @@ export class PlayerController {
 
     // Oyun kapandığında hafızayı temizlemek için dinleyicileri kaldırıyoruz:
     dispose() {
-        this.controls.dispose(); // PointerLock'ı temizler
+        this.controls.dispose();
+        if (this.joystick) this.joystick.dispose(); // Joystick'i ekrandan kaldırır
         window.removeEventListener('keydown', this.onKeyDown);
         window.removeEventListener('keyup', this.onKeyUp);
     }
 
     update() {
-        // 1. Eğer oyuncu ekrana tıklayıp fareyi kilitlemediyse hareket etmesin:
-        if (!this.controls.isLocked) return;
+        // 1. Eğer fare kilitli değilse VE joystick'e de dokunulmuyorsa hareket etme:
+        if (!this.controls.isLocked && !this.joystick.isActive) return;
 
-        // 2. İleri-Geri ve Sağ-Sol girdilerini hesaplayalım
         let forward = 0;
         let right = 0;
 
+        // 2. Klavye Girdileri (WASD)
         if (this.keys['KeyW'] || this.keys['ArrowUp']) forward += 1;
         if (this.keys['KeyS'] || this.keys['ArrowDown']) forward -= 1;
         if (this.keys['KeyD'] || this.keys['ArrowRight']) right += 1;
         if (this.keys['KeyA'] || this.keys['ArrowLeft']) right -= 1;
 
-        // 3. Çapraz Koşma Hızı Düzeltmesi (Diagonal Normalization):
-        // Hem W hem D'ye aynı anda basıldığında hızın %41 artmasını engellemek için
-        // her iki değeri de 1 / sqrt(2) yani ~0.7071 ile çarpıyoruz:
-        if (forward !== 0 && right !== 0) {
-            forward *= 0.7071;
-            right *= 0.7071;
+        // 3. Sanal Joystick Girdileri (Mobil)
+        forward += this.joystick.input.y;
+        right += this.joystick.input.x;
+
+        // 4. Çapraz Koşma Hız Sınırlaması (Evrensel Vektör Normalizasyonu):
+        // İster klavye ister joystick olsun, toplam uzunluk 1'den büyükse 1'e çekiyoruz:
+        const length = Math.hypot(forward, right);
+        if (length > 1) {
+            forward /= length;
+            right /= length;
         }
 
-        // 4. Kamerayı baktığı yöne doğru hareket ettir:
+        // 5. Kamerayı ve karakteri hareket ettir:
         this.controls.moveForward(forward * this.speed);
         this.controls.moveRight(right * this.speed);
 
-        // 5. Karakterin gövdesini de kameranın tam altına taşıyalım:
-        // (Böylece multiplayer'da diğer oyuncular gövdemizi kameramızın altında görür)
         this.player.position.x = this.camera.position.x;
         this.player.position.z = this.camera.position.z;
-        this.player.position.y = this.camera.position.y - 0.7; // Göz hizasından ayaklara indiriyoruz
+        this.player.position.y = this.camera.position.y - 0.7;
     }
 }
