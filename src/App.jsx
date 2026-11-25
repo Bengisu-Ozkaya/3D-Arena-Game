@@ -32,7 +32,7 @@ function App() {
     const renderer = new THREE.WebGLRenderer({ antialias: true })
     renderer.setSize(width, height)
 
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)) // yüksek çözünürlüklüekranlar için optimizasyon
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2)) // yüksek çözünürlüklü ekranlar için optimizasyon
 
     // Canvas elementini div'in içine ekliyoruz
     mountRef.current.innerHTML = ''
@@ -50,7 +50,7 @@ function App() {
     player.position.set(0, 0.9, 15)
     scene.add(player)
 
-    // Kamerayı oyuncuya doğru baksın
+    // Kamera oyuncuya doğru baksın
     camera.lookAt(player.position)
 
     // 6. Player hareket fonksiyonu bağlama
@@ -145,7 +145,6 @@ function App() {
         )}
       </div>
 
-      {/* Klasik Artı (+) Nişangah */}
       {isRunning && (
         <div
           style={{

@@ -8,8 +8,11 @@ export class PlayerController {
         this.camera = camera;
         this.domElement = domElement;
 
-        // Karakterin yürüme hızı
-        this.speed = 0.15;
+        this.speed = 0.15;        // Karakterin yürüme hızı 
+        this.velocityY = 0;       // Dikey anlık hız
+        this.gravity = 0.012;     // Yerçekimi ivmesi 
+        this.jumpStrength = 0.22; // Zıplama anındaki yukarı fırlatma gücü
+        this.isGrounded = true;   // Karakter yere basıyor mu?
 
         // PointerLock Kontrollerini oluşturuyoruz
         this.controls = new PointerLockControls(this.camera, this.domElement);
@@ -106,6 +109,15 @@ export class PlayerController {
         window.addEventListener('touchcancel', this.onTouchEnd);
     }
 
+    jump() {
+        if (this.isGrounded) {
+            //zıplama
+            this.velocityY = this.jumpStrength
+            this.isGrounded = false
+
+        }
+    }
+
     // Oyun kapandığında hafızayı temizlemek için dinleyicileri kaldırıyoruz:
     dispose() {
         this.controls.dispose();
@@ -130,6 +142,8 @@ export class PlayerController {
         if (this.keys['KeyS'] || this.keys['ArrowDown']) forward -= 1;
         if (this.keys['KeyD'] || this.keys['ArrowRight']) right += 1;
         if (this.keys['KeyA'] || this.keys['ArrowLeft']) right -= 1;
+        if (this.keys['Space']) this.jump();
+
 
         // 3. Sanal Joystick Girdileri (Mobil)
         forward += this.joystick.input.y;
@@ -147,8 +161,20 @@ export class PlayerController {
         this.controls.moveForward(forward * this.speed);
         this.controls.moveRight(right * this.speed);
 
+        // 1. Yerçekimini uygula (Hızı her karede biraz azaltır)
+        this.velocityY -= this.gravity;
+        this.player.position.y += this.velocityY;
+
+        // 2. Zemin Kontrolü (Karakter yerin dibine girmesin)
+        if (this.player.position.y <= 0.9) {
+            this.player.position.y = 0.9;
+            this.velocityY = 0;       // Yere basınca düşme hızı sıfırlanır
+            this.isGrounded = true;   // Tekrar zıplayabilir
+        }
+
+        // 3. X ve Z'de karakter kamerayı, Y'de ise kamera karakteri takip eder:
         this.player.position.x = this.camera.position.x;
         this.player.position.z = this.camera.position.z;
-        this.player.position.y = this.camera.position.y - 0.7;
+        this.camera.position.y = this.player.position.y + 0.7; // Kamerayı kafaya koy
     }
 }
