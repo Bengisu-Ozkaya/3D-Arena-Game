@@ -128,8 +128,8 @@ export class ArenaMap {
       { size: [4, 2, 1], pos: [5, 1, 5], mat: coverMat },
 
       // Yüksek Turkuaz Siperler
-      { size: [6, 3, 1], pos: [0, 2, 15], mat: coverMat },
-      { size: [6, 3, 1], pos: [0, 2, -15], mat: coverMat },
+      { size: [6, 3, 1], pos: [0, 1.5, 15], mat: coverMat },
+      { size: [6, 3, 1], pos: [0, 1.5, -15], mat: coverMat },
 
       // Köşe Yüksek Sütunlar (Keskin nişancı/saklanma noktaları)
       { size: [2, 6, 2], pos: [-15, 3, -15], mat: pillarMat },
