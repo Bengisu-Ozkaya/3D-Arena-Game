@@ -11,10 +11,12 @@ import * as THREE from 'three';
 export class ArenaMap {
   constructor(scene) {
     this.scene = scene;
-    
+
     // Haritadaki tüm görsel nesneleri tek bir grup altında topluyoruz.
     // Bu sayede haritayı tek seferde açıp kapatabilir veya silebiliriz.
     this.mapGroup = new THREE.Group();
+
+    this.colliders = [] //çarpışma yaşanabilecek tüm duvar ve siperlerin kutularını tutar
 
     this.initLights();
     this.initFloor();
@@ -48,17 +50,17 @@ export class ArenaMap {
   initFloor() {
     const floorGeo = new THREE.PlaneGeometry(60, 60);
     // MeshStandardMaterial ışığı yansıtır ve nesnelerin 3D görünmesini sağlar
-    const floorMat = new THREE.MeshStandardMaterial({ 
+    const floorMat = new THREE.MeshStandardMaterial({
       color: 0x8C8C8C, // Koyu antrasit zemin
       roughness: 0.8,
       metalness: 0.2
     });
-    
+
     const floor = new THREE.Mesh(floorGeo, floorMat);
     // PlaneGeometry varsayılan olarak dik durur; zemine yatırmak için X ekseninde -90 derece çeviriyoruz
     floor.rotation.x = -Math.PI / 2;
     floor.position.y = 0;
-    
+
     this.mapGroup.add(floor);
   }
 
@@ -72,9 +74,9 @@ export class ArenaMap {
     const halfSize = arenaSize / 2;
     const wallThickness = 1;
 
-    const wallMat = new THREE.MeshStandardMaterial({ 
+    const wallMat = new THREE.MeshStandardMaterial({
       color: 0x3a3a42, // Koyu gri duvarlar
-      roughness: 0.9 
+      roughness: 0.9
     });
 
     // 4 duvarın konum ve boyut tanımları: [genişlik, yükseklik, derinlik, x, y, z]
@@ -93,7 +95,11 @@ export class ArenaMap {
       const geo = new THREE.BoxGeometry(...config.size);
       const wall = new THREE.Mesh(geo, wallMat);
       wall.position.set(...config.pos);
-      
+
+      //PerimeterWall Collider
+      const box = new THREE.Box3().setFromObject(wall); 
+      this.colliders.push(box);
+
       this.mapGroup.add(wall);
     });
   }
@@ -103,14 +109,14 @@ export class ArenaMap {
    * Klasik arena FPS'lerde oyuncuların arkasına saklanabileceği siper kutuları ve sütunlar.
    */
   initCovers() {
-    const coverMat = new THREE.MeshStandardMaterial({ 
+    const coverMat = new THREE.MeshStandardMaterial({
       color: 0x00adb5, // Turkuaz taktiksel renk
-      roughness: 0.5 
+      roughness: 0.5
     });
 
-    const pillarMat = new THREE.MeshStandardMaterial({ 
+    const pillarMat = new THREE.MeshStandardMaterial({
       color: 0xf38181, // Kırmızı sütunlar
-      roughness: 0.6 
+      roughness: 0.6
     });
 
     // Çeşitli taktiksel engeller [genişlik, yükseklik, derinlik, x, y, z, materyal]
@@ -136,6 +142,10 @@ export class ArenaMap {
       const geo = new THREE.BoxGeometry(...obs.size);
       const mesh = new THREE.Mesh(geo, obs.mat);
       mesh.position.set(...obs.pos);
+
+      //Covers Collider
+      const box = new THREE.Box3().setFromObject(mesh); 
+      this.colliders.push(box);
 
       this.mapGroup.add(mesh);
     });

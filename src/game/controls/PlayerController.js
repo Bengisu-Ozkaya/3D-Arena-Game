@@ -3,15 +3,16 @@ import { PointerLockControls } from 'three/addons/controls/PointerLockControls.j
 import { VirtualJoystick } from './VirtualJoystick.js';
 
 export class PlayerController {
-    constructor(player, camera, domElement) {
+    constructor(player, camera, domElement, colliders = []) {
         this.player = player;
         this.camera = camera;
         this.domElement = domElement;
+        this.colliders = colliders
 
         this.speed = 0.15;        // Karakterin yürüme hızı 
         this.velocityY = 0;       // Dikey anlık hız
         this.gravity = 0.012;     // Yerçekimi ivmesi 
-        this.jumpStrength = 0.22; // Zıplama anındaki yukarı fırlatma gücü
+        this.jumpStrength = 0.25 // Zıplama anındaki yukarı fırlatma gücü
         this.isGrounded = true;   // Karakter yere basıyor mu?
 
         // PointerLock Kontrollerini oluşturuyoruz
@@ -109,13 +110,31 @@ export class PlayerController {
         window.addEventListener('touchcancel', this.onTouchEnd);
     }
 
+    //Zıplama
     jump() {
         if (this.isGrounded) {
             //zıplama
             this.velocityY = this.jumpStrength
-            this.isGrounded = false
+            this.isGrounded = false //space e bir daha basıldığında zıplamamak için
 
         }
+    }
+
+    checkCollision(x, y, z) {
+        // Oyuncunun o noktadaki hayali sınır kutusunu oluşturma
+        const playerBox = new THREE.Box3().setFromCenterAndSize(
+            new THREE.Vector3(x, y, z),
+            new THREE.Vector3(0.8, 1.8, 0.8)
+        );
+
+        // Haritadaki tüm engelleri tek tek kontrol et
+        for (const box of this.colliders) {
+            if (playerBox.intersectsBox(box)) {
+                return box; // Çarpışma var
+            }
+        }
+
+        return null; // Hiçbir şeye çarpmadı, yol temiz!
     }
 
     // Oyun kapandığında hafızayı temizlemek için dinleyicileri kaldırıyoruz:
@@ -131,50 +150,87 @@ export class PlayerController {
     }
 
     update() {
-        // 1. Eğer fare kilitli değilse VE joystick'e de dokunulmuyorsa hareket etme:
-        if (!this.controls.isLocked && !this.joystick.isActive) return;
-
         let forward = 0;
         let right = 0;
 
-        // 2. Klavye Girdileri (WASD)
-        if (this.keys['KeyW'] || this.keys['ArrowUp']) forward += 1;
-        if (this.keys['KeyS'] || this.keys['ArrowDown']) forward -= 1;
-        if (this.keys['KeyD'] || this.keys['ArrowRight']) right += 1;
-        if (this.keys['KeyA'] || this.keys['ArrowLeft']) right -= 1;
-        if (this.keys['Space']) this.jump();
+        // 1. Klavye Girdileri (Sadece masaüstünde fare kilitliyken çalışsın)
+        if (this.controls.isLocked) {
+            if (this.keys['KeyW'] || this.keys['ArrowUp']) forward += 1;
+            if (this.keys['KeyS'] || this.keys['ArrowDown']) forward -= 1;
+            if (this.keys['KeyD'] || this.keys['ArrowRight']) right += 1;
+            if (this.keys['KeyA'] || this.keys['ArrowLeft']) right -= 1;
+            if (this.keys['Space']) this.jump();
+        }
 
+        // 2. Sanal Joystick Girdileri (Mobil)
+        if (this.joystick.isActive) {
+            forward += this.joystick.input.y;
+            right += this.joystick.input.x;
+        }
 
-        // 3. Sanal Joystick Girdileri (Mobil)
-        forward += this.joystick.input.y;
-        right += this.joystick.input.x;
-
-        // 4. Çapraz Koşma Hız Sınırlaması (Evrensel Vektör Normalizasyonu):
-        // İster klavye ister joystick olsun, toplam uzunluk 1'den büyükse 1'e çekiyoruz:
+        // 3. Çapraz Koşma Hız Sınırlaması (Vektör Normalizasyonu)
         const length = Math.hypot(forward, right);
         if (length > 1) {
             forward /= length;
             right /= length;
         }
 
-        // 5. Kamerayı ve karakteri hareket ettir:
+        // 4. YATAY HAREKET VE DUVAR KAYMASI (X ve Z Ayrı Kontrol Edilir)
+        const oldX = this.player.position.x;
+        const oldZ = this.player.position.z;
+
+        // Kamerayı geçici olarak yeni hedef konuma ilerlet
         this.controls.moveForward(forward * this.speed);
         this.controls.moveRight(right * this.speed);
 
-        // 1. Yerçekimini uygula (Hızı her karede biraz azaltır)
+        const newX = this.camera.position.x;
+        const newZ = this.camera.position.z;
+
+        // Önce sadece X eksenini dene: Çarpmıyorsa X'i güncelle
+        if (!this.checkCollision(newX, this.player.position.y, oldZ)) {
+            this.player.position.x = newX;
+        }
+
+        // Sonra sadece Z eksenini dene: Çarpmıyorsa Z'yi güncelle
+        if (!this.checkCollision(this.player.position.x, this.player.position.y, newZ)) {
+            this.player.position.z = newZ;
+        }
+
+        // 5. DİKEY HAREKET (Yerçekimi ve Kutuların Üstüne Çıkma)
+        this.isGrounded = false; // Havada varsay, yere veya kutuya değerse true yapacağız
         this.velocityY -= this.gravity;
         this.player.position.y += this.velocityY;
 
-        // 2. Zemin Kontrolü (Karakter yerin dibine girmesin)
-        if (this.player.position.y <= 0.9) {
-            this.player.position.y = 0.9;
-            this.velocityY = 0;       // Yere basınca düşme hızı sıfırlanır
-            this.isGrounded = true;   // Tekrar zıplayabilir
+        // Y ekseninde bir kutuya çarptık mı?
+        const hitBox = this.checkCollision(
+            this.player.position.x,
+            this.player.position.y,
+            this.player.position.z
+        );
+
+        if (hitBox) {
+            if (this.velocityY <= 0) {
+                // Yukarıdan kutunun üstüne düştük -> Kutunun tavanına oturt!
+                this.player.position.y = hitBox.max.y + 0.901;
+                this.velocityY = 0;
+                this.isGrounded = true;
+            } else {
+                // Aşağıdan zıplayıp kafamızı bir engele vurduk
+                this.player.position.y = hitBox.min.y - 0.901;
+                this.velocityY = 0;
+            }
         }
 
-        // 3. X ve Z'de karakter kamerayı, Y'de ise kamera karakteri takip eder:
-        this.player.position.x = this.camera.position.x;
-        this.player.position.z = this.camera.position.z;
-        this.camera.position.y = this.player.position.y + 0.7; // Kamerayı kafaya koy
+        // 6. Ana Zemin Kontrolü (y = 0 zemininin altına düşmesin)
+        if (this.player.position.y <= 0.9) {
+            this.player.position.y = 0.9;
+            this.velocityY = 0;
+            this.isGrounded = true;
+        }
+
+        // 7. Kamerayı oyuncunun onaylanmış (çarpışmasız) konumuna eşitle
+        this.camera.position.x = this.player.position.x;
+        this.camera.position.z = this.player.position.z;
+        this.camera.position.y = this.player.position.y + 0.7;
     }
 }

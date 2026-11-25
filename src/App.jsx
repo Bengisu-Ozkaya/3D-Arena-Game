@@ -57,8 +57,9 @@ function App() {
     camera.lookAt(player.position)
 
     // 6. Player hareket fonksiyonu bağlama
-    const playerController = new PlayerController(player, camera, renderer.domElement)
+    const playerController = new PlayerController(player, camera, renderer.domElement,arenaMap.colliders)
     playerControllerRef.current = playerController
+
 
     // Pencere veya telefon boyutu değiştiğinde otomatik uyum sağla:
     const handleResize = () => {
@@ -127,8 +128,6 @@ function App() {
             padding: '12px 28px',
             fontSize: '18px',
             fontWeight: 'bold',
-            backgroundColor: '#00ff88',
-            color: '#111',
             border: 'none',
             borderRadius: '6px',
             cursor: 'pointer',
@@ -148,9 +147,6 @@ function App() {
             left: '20px',
             zIndex: 10,
             padding: '8px 16px',
-            backgroundColor: 'rgba(0, 0, 0, 0.6)',
-            color: '#fff',
-            border: '1px solid #555',
             borderRadius: '4px',
             cursor: 'pointer',
           }}
