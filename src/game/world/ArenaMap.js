@@ -97,7 +97,7 @@ export class ArenaMap {
       wall.position.set(...config.pos);
 
       //PerimeterWall Collider
-      const box = new THREE.Box3().setFromObject(wall); 
+      const box = new THREE.Box3().setFromObject(wall);
       this.colliders.push(box);
 
       this.mapGroup.add(wall);
@@ -127,6 +127,10 @@ export class ArenaMap {
       { size: [4, 2, 1], pos: [-5, 1, 5], mat: coverMat },
       { size: [4, 2, 1], pos: [5, 1, 5], mat: coverMat },
 
+      // Yüksek Turkuaz Siperler
+      { size: [6, 3, 1], pos: [0, 2, 15], mat: coverMat },
+      { size: [6, 3, 1], pos: [0, 2, -15], mat: coverMat },
+
       // Köşe Yüksek Sütunlar (Keskin nişancı/saklanma noktaları)
       { size: [2, 6, 2], pos: [-15, 3, -15], mat: pillarMat },
       { size: [2, 6, 2], pos: [15, 3, -15], mat: pillarMat },
@@ -144,7 +148,7 @@ export class ArenaMap {
       mesh.position.set(...obs.pos);
 
       //Covers Collider
-      const box = new THREE.Box3().setFromObject(mesh); 
+      const box = new THREE.Box3().setFromObject(mesh);
       this.colliders.push(box);
 
       this.mapGroup.add(mesh);

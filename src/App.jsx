@@ -50,7 +50,7 @@ function App() {
     const playerGeo = new THREE.BoxGeometry(0.8, 1.8, 0.8)
     const playerMat = new THREE.MeshStandardMaterial({ color: 0x2468ac })
     const player = new THREE.Mesh(playerGeo, playerMat)
-    player.position.set(0, 0.9, 15)
+    player.position.set(0, 0.9, 25)
     scene.add(player)
 
     // Kamera oyuncuya doğru baksın
