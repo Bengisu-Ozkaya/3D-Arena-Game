@@ -9,9 +9,40 @@ export class WeaponSystem {
         this.raycaster = new THREE.Raycaster(); // lazer tabanca
 
         this.screenCenter = new THREE.Vector2(0, 0); // ekranın oratsındaki nişangah (0,0)
+
+        this.initGun()
+    }
+
+    initGun() {
+        // 1. Minimalist metalik silah gövdesi (En: 0.08, Boy: 0.1, Uzunluk: 0.4)
+        const gunGeo = new THREE.BoxGeometry(0.08, 0.1, 0.4);
+        const gunMat = new THREE.MeshStandardMaterial({
+            color: 0x2b2d42, // Koyu metalik gri-lacivert
+            metalness: 0.7,  // Metal parlaklığı
+            roughness: 0.3   // Hafif pürüzsüz
+        });
+        this.gun = new THREE.Mesh(gunGeo, gunMat);
+
+        // Kameraya göre konumu: Sağda (+0.28), Aşağıda (-0.22), İleride (-0.45)
+        this.gun.position.set(0.28, -0.22, -0.45);
+
+        // 2. Namlunun tam ucuna görünmez bir "Namlu Ucu Noktası" (Muzzle) koyuyoruz:
+        this.muzzle = new THREE.Object3D();
+        this.muzzle.position.set(0, 0, -0.21); // Silahın ön ucu
+        this.gun.add(this.muzzle);
+
+        // 3. Silahı kameraya, kamerayı da sahneye bağla!
+        this.camera.add(this.gun);
+        this.scene.add(this.camera);
     }
 
     shoot() {
+        // Geri tepme (Recoil) efekti: Silahı 7cm geriye çekip 70ms sonra yerine oturt
+        this.gun.position.z = -0.38;
+        setTimeout(() => {
+            this.gun.position.z = -0.45;
+        }, 70);
+
         this.raycaster.setFromCamera(this.screenCenter, this.camera)
 
         const intersects = this.raycaster.intersectObjects(this.arenaMap.mapGroup.children)
@@ -57,8 +88,8 @@ export class WeaponSystem {
 
     createTracer(endPoint) {
         // Başlangıç: Kameranın konumu ama 0.25m aşağısı (silah namlusu hizası)
-        const startPoint = this.camera.position.clone();
-        startPoint.y -= 0.25;
+        const startPoint = new THREE.Vector3();
+        this.muzzle.getWorldPosition(startPoint); // Namlunun dünyadaki tam koordinatını al!
 
         // İki nokta arasına çizgi geometrisi oluştur
         const geometry = new THREE.BufferGeometry().setFromPoints([startPoint, endPoint]);

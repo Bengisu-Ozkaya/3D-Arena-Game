@@ -200,7 +200,7 @@ function App() {
           }}
           style={{
             position: 'absolute',
-            bottom: '80px',
+            bottom: '150px',
             right: '40px',
             width: '64px',
             height: '64px',
@@ -234,7 +234,7 @@ function App() {
           style={{
             position: 'absolute',
             bottom: '80px',
-            right: '120px',
+            right: '40px',
             width: '64px',
             height: '64px',
             borderRadius: '50%',
@@ -254,7 +254,7 @@ function App() {
             boxShadow: '0 4px 10px rgba(0, 0, 0, 0.3)'
           }}
         >
-          🔥
+          🔫
         </button>
       )}
     </div>
