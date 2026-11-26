@@ -159,7 +159,7 @@ export class ArenaMap {
   }
 
   initTargets() {
-    const targetMat = new THREE.MeshStandardMaterial({color: 0xffaa00})
+    const targetMat = new THREE.MeshStandardMaterial({ color: 0xffaa00 })
 
     const enemy = [
       { size: [0.8, 1.8, 0.8], pos: [-5, 0.9, -8], mat: targetMat },
@@ -171,6 +171,11 @@ export class ArenaMap {
       const geo = new THREE.BoxGeometry(...tar.size);
       const mesh = new THREE.Mesh(geo, tar.mat.clone());
       mesh.position.set(...tar.pos);
+
+      //Targets Collider
+      const box = new THREE.Box3().setFromObject(mesh);
+      mesh.userData.collider = box; // Işınlanınca güncelleyebilmek için cebine koyduk!
+      this.colliders.push(box);
 
       mesh.userData.isTarget = true;
       mesh.userData.hp = 3;

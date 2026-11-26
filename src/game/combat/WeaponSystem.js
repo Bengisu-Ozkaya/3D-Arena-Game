@@ -45,6 +45,9 @@ export class WeaponSystem {
                 const randomX = (Math.random() - 0.5) * 40; // -20 ile +20 arası
                 const randomZ = (Math.random() - 0.5) * 40; // -20 ile +20 arası
                 hitObject.position.set(randomX, 0.9, randomZ);
+
+                hitObject.userData.collider.setFromObject(hitObject); // Collider'ı da yeni konuma taşı
+
                 hitObject.userData.hp = 3;
             }
         }
