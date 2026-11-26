@@ -17,7 +17,15 @@ export class WeaponSystem {
         const intersects = this.raycaster.intersectObjects(this.arenaMap.mapGroup.children)
 
         // 1. Işın hiçbir şeye çarpmadıysa (gökyüzüne sıkıldıysa) çık:
-        if (intersects.length === 0) return;
+        if (intersects.length === 0) {
+            // Gökyüzüne sıkıldıysa ışın yönünde 60 metre uzağa kadar iz çiz ve çık:
+            const skyPoint = this.raycaster.ray.at(60, new THREE.Vector3());
+            this.createTracer(skyPoint);
+            return;
+        }
+
+        // Bir şeye çarptıysa tam çarptığı 3B noktaya (point) kadar iz çiz!
+        this.createTracer(intersects[0].point);
 
         // 2. Işının İLK çarptığı nesneyi al (en yakındaki nesne):
         const hitObject = intersects[0].object;
@@ -40,5 +48,27 @@ export class WeaponSystem {
                 hitObject.userData.hp = 3;
             }
         }
+
+
+    }
+
+    createTracer(endPoint) {
+        // Başlangıç: Kameranın konumu ama 0.25m aşağısı (silah namlusu hizası)
+        const startPoint = this.camera.position.clone();
+        startPoint.y -= 0.25;
+
+        // İki nokta arasına çizgi geometrisi oluştur
+        const geometry = new THREE.BufferGeometry().setFromPoints([startPoint, endPoint]);
+        const material = new THREE.LineBasicMaterial({ color: 0xee4b2b }); // Parlak sarı
+        const tracerLine = new THREE.Line(geometry, material);
+
+        this.scene.add(tracerLine);
+
+        // 60 milisaniye sonra çizgiyi sahneden ve ekran kartı hafızasından (VRAM) sil!
+        setTimeout(() => {
+            this.scene.remove(tracerLine);
+            geometry.dispose();
+            material.dispose();
+        }, 60);
     }
 }

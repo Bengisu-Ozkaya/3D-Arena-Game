@@ -200,7 +200,7 @@ function App() {
           }}
           style={{
             position: 'absolute',
-            bottom: '40px',
+            bottom: '80px',
             right: '40px',
             width: '64px',
             height: '64px',
@@ -222,6 +222,39 @@ function App() {
           }}
         >
           ▲
+        </button>
+      )}
+
+      {isRunning && (
+        <button
+          onPointerDown={(e) => {
+            e.stopPropagation();
+            weaponSystemRef.current?.shoot();
+          }}
+          style={{
+            position: 'absolute',
+            bottom: '80px',
+            right: '120px',
+            width: '64px',
+            height: '64px',
+            borderRadius: '50%',
+            backgroundColor: 'rgba(255, 255, 255, 0.15)',
+            border: '2px solid rgba(255, 255, 255, 0.4)',
+            color: '#ffffff',
+            fontSize: '20px',
+            fontWeight: 'bold',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: 'pointer',
+            userSelect: 'none',
+            touchAction: 'none',
+            zIndex: 30,
+            backdropFilter: 'blur(6px)',
+            boxShadow: '0 4px 10px rgba(0, 0, 0, 0.3)'
+          }}
+        >
+          🔥
         </button>
       )}
     </div>
