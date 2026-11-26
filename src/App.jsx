@@ -47,8 +47,6 @@ function App() {
 
     // 4. Camera Oluşturma
     const camera = new THREE.PerspectiveCamera(55, (width / height), 0.1, 1000)
-    camera.position.set(0, 5, 25)
-    camera.lookAt(0, 0, 0)
 
     // 5. Player oluşturma
     const playerGeo = new THREE.BoxGeometry(0.8, 1.8, 0.8)
@@ -56,9 +54,6 @@ function App() {
     const player = new THREE.Mesh(playerGeo, playerMat)
     player.position.set(0, 0.9, 25)
     scene.add(player)
-
-    // Kamera oyuncuya doğru baksın
-    camera.lookAt(player.position)
 
     // 6. Player hareket fonksiyonu bağlama
     const playerController = new PlayerController(player, camera, renderer.domElement, arenaMap.colliders)
@@ -71,10 +66,20 @@ function App() {
     const handleMouseDown = (e) => {
       // e.button === 0 (Sol Tık), oyun çalışıyorsa VE fare ekrana kilitliyse ateş et!
       if (e.button === 0 && isRunningAnimRef.current && playerController.controls.isLocked) {
-        weaponSystem.shoot()
+        weaponSystem.startFiring()
       }
     }
+
+    const handleMouseUp = (e) => {
+      if (e.button === 0) {
+        weaponSystem.stopFiring()
+      }
+    }
+
     window.addEventListener('mousedown', handleMouseDown)
+    window.addEventListener('mouseup', handleMouseUp)
+
+
 
 
     // Pencere veya telefon boyutu değiştiğinde otomatik uyum sağla:
@@ -94,6 +99,7 @@ function App() {
 
       if (isRunningAnimRef.current) {
         playerController.update()
+        weaponSystem.update()
       }
 
       renderer.render(scene, camera)
@@ -229,7 +235,14 @@ function App() {
         <button
           onPointerDown={(e) => {
             e.stopPropagation();
-            weaponSystemRef.current?.shoot();
+            weaponSystemRef.current?.startFiring();
+          }}
+          onPointerUp={(e) => {
+            e.stopPropagation();
+            weaponSystemRef.current?.stopFiring();
+          }}
+          onPointerCancel={() => {
+            weaponSystemRef.current?.stopFiring();
           }}
           style={{
             position: 'absolute',

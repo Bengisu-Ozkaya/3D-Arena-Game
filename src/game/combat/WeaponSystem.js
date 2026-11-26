@@ -10,6 +10,10 @@ export class WeaponSystem {
 
         this.screenCenter = new THREE.Vector2(0, 0); // ekranın oratsındaki nişangah (0,0)
 
+        this.isFiring = false;   // Tetiğe basılı tutuluyor mu?
+        this.fireRate = 130;     // İki mermi arası bekleme süresi (ms)
+        this.lastShotTime = 0;   // Son merminin atıldığı zaman
+
         this.initGun()
     }
 
@@ -36,7 +40,26 @@ export class WeaponSystem {
         this.scene.add(this.camera);
     }
 
+    startFiring() {
+        this.isFiring = true;
+        this.shoot(); // İlk tıklamada hiç beklemeden ilk mermiyi ateşle!
+    }
+
+    stopFiring() {
+        this.isFiring = false;
+    }
+
+    update() {
+        if (this.isFiring) {
+            this.shoot();
+        }
+    }
+
     shoot() {
+        const now = performance.now(); // Şu anki milisaniye
+        if (now - this.lastShotTime < this.fireRate) return; // 130ms dolmadıysa ateş etme!
+        this.lastShotTime = now; // Son atış saatini güncelle
+        
         // Geri tepme (Recoil) efekti: Silahı 7cm geriye çekip 70ms sonra yerine oturt
         this.gun.position.z = -0.38;
         setTimeout(() => {
