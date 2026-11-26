@@ -15,6 +15,9 @@ export class WeaponSystem {
         this.lastShotTime = 0;   // Son merminin atıldığı zaman
 
         this.initGun()
+
+        this.bulletHoles = [];     // Duvardaki mermi deliklerini tutan liste
+        this.maxBulletHoles = 30;  // Ekranda aynı anda en fazla 30 delik kalsın
     }
 
     initGun() {
@@ -59,7 +62,7 @@ export class WeaponSystem {
         const now = performance.now(); // Şu anki milisaniye
         if (now - this.lastShotTime < this.fireRate) return; // 130ms dolmadıysa ateş etme!
         this.lastShotTime = now; // Son atış saatini güncelle
-        
+
         // Geri tepme (Recoil) efekti: Silahı 7cm geriye çekip 70ms sonra yerine oturt
         this.gun.position.z = -0.38;
         setTimeout(() => {
@@ -104,6 +107,9 @@ export class WeaponSystem {
 
                 hitObject.userData.hp = 3;
             }
+        } else {
+            // Hedef değilse (duvar, siper veya zeminse) mermi deliği bırak!
+            this.createBulletHole(intersects[0]);
         }
 
 
@@ -127,5 +133,32 @@ export class WeaponSystem {
             geometry.dispose();
             material.dispose();
         }, 60);
+    }
+
+    createBulletHole(hit) {
+        // 6cm yarıçapında küçük koyu siyah mermi izi dairesi
+        const holeGeo = new THREE.CircleGeometry(0.06, 8);
+        const holeMat = new THREE.MeshBasicMaterial({ color: 0x111111 });
+        const hole = new THREE.Mesh(holeGeo, holeMat);
+
+        // Çarptığımız yüzeyin dünya uzayındaki bakış yönünü (Normal) al:
+        const normal = hit.face.normal.clone().transformDirection(hit.object.matrixWorld);
+
+        // Z-Fighting (titreme) olmasın diye duvarın 5 milimetre (0.005m) önüne koy:
+        hole.position.copy(hit.point).addScaledVector(normal, 0.005);
+
+        // Dairenin yüzünü duvarın baktığı yöne çevir (duvara tam paralel yapışsın):
+        hole.lookAt(hit.point.clone().add(normal));
+
+        this.scene.add(hole);
+        this.bulletHoles.push(hole);
+
+        // Eğer 30 delik sınırını aştıysak EN ESKİ deliği sahneden ve VRAM'den sil!
+        if (this.bulletHoles.length > this.maxBulletHoles) {
+            const oldestHole = this.bulletHoles.shift(); // İlk gireni listeden çıkar
+            this.scene.remove(oldestHole);
+            oldestHole.geometry.dispose();
+            oldestHole.material.dispose();
+        }
     }
 }
