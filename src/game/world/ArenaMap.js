@@ -18,10 +18,13 @@ export class ArenaMap {
 
     this.colliders = [] //çarpışma yaşanabilecek tüm duvar ve siperlerin kutularını tutar
 
+    this.targets = []; //vurulacak hedefler
+
     this.initLights();
     this.initFloor();
     this.initPerimeterWalls();
     this.initCovers();
+    this.initTargets();
 
     // Tüm harita grubunu ana Three.js sahnesine ekliyoruz
     this.scene.add(this.mapGroup);
@@ -153,6 +156,29 @@ export class ArenaMap {
 
       this.mapGroup.add(mesh);
     });
+  }
+
+  initTargets() {
+    const targetMat = new THREE.MeshStandardMaterial({color: 0xffaa00})
+
+    const enemy = [
+      { size: [0.8, 1.8, 0.8], pos: [-5, 0.9, -8], mat: targetMat },
+      { size: [0.8, 1.8, 0.8], pos: [5, 0.9, -8], mat: targetMat },
+      { size: [0.8, 1.8, 0.8], pos: [0, 0.9, -20], mat: targetMat },
+    ]
+
+    enemy.forEach(tar => {
+      const geo = new THREE.BoxGeometry(...tar.size);
+      const mesh = new THREE.Mesh(geo, tar.mat.clone());
+      mesh.position.set(...tar.pos);
+
+      mesh.userData.isTarget = true;
+      mesh.userData.hp = 3;
+
+      this.targets.push(mesh);
+
+      this.mapGroup.add(mesh);
+    })
   }
 
   /**

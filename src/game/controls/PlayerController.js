@@ -176,7 +176,6 @@ export class PlayerController {
         }
 
         // 4. YATAY HAREKET VE DUVAR KAYMASI (X ve Z Ayrı Kontrol Edilir)
-        const oldX = this.player.position.x;
         const oldZ = this.player.position.z;
 
         // Kamerayı geçici olarak yeni hedef konuma ilerlet

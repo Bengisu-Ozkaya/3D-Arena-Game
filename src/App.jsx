@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react"
 import * as THREE from "three"
 import { ArenaMap } from "./game/world/ArenaMap"
 import { PlayerController } from "./game/controls/PlayerController"
+import { WeaponSystem } from "./game/combat/WeaponSystem"
 
 function App() {
   const mountRef = useRef(null) // HTML'de canvas'ın içine konacağı <div>
@@ -12,6 +13,9 @@ function App() {
 
   //mobilde zıplama butonu için
   const playerControllerRef = useRef(null)
+
+  //ateş etme
+  const weaponSystemRef = useRef(null)
 
   const toggleRunning = () => {
     SetIsRunning(!isRunning)
@@ -57,8 +61,20 @@ function App() {
     camera.lookAt(player.position)
 
     // 6. Player hareket fonksiyonu bağlama
-    const playerController = new PlayerController(player, camera, renderer.domElement,arenaMap.colliders)
+    const playerController = new PlayerController(player, camera, renderer.domElement, arenaMap.colliders)
     playerControllerRef.current = playerController
+
+    // 7.Silah kullanabilme
+    const weaponSystem = new WeaponSystem(scene, camera, arenaMap)
+    weaponSystemRef.current = weaponSystem
+
+    const handleMouseDown = (e) => {
+      // e.button === 0 (Sol Tık), oyun çalışıyorsa VE fare ekrana kilitliyse ateş et!
+      if (e.button === 0 && isRunningAnimRef.current && playerController.controls.isLocked) {
+        weaponSystem.shoot()
+      }
+    }
+    window.addEventListener('mousedown', handleMouseDown)
 
 
     // Pencere veya telefon boyutu değiştiğinde otomatik uyum sağla:
@@ -91,6 +107,7 @@ function App() {
       arenaMap.dispose()
       renderer.dispose()
       playerController.dispose()
+      window.removeEventListener('resize', handleResize)
       if (mountRef.current) {
         mountRef.current.innerHTML = ''
       }
