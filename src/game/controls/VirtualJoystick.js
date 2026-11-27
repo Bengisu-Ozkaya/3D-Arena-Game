@@ -47,6 +47,8 @@ export class VirtualJoystick {
   initEvents() {
     // Dokunma başladığında
     this.base.addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
       this.isActive = true;
       this.base.setPointerCapture(e.pointerId);
       this.updateKnob(e.clientX, e.clientY);
@@ -55,6 +57,8 @@ export class VirtualJoystick {
     // Parmağı sürüklerken
     this.base.addEventListener('pointermove', (e) => {
       if (!this.isActive) return;
+      e.preventDefault();
+      e.stopPropagation();
       this.updateKnob(e.clientX, e.clientY);
     });
 

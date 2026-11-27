@@ -23,10 +23,13 @@ export class PlayerController {
         // PointerLock Kontrollerini oluşturuyoruz
         this.controls = new PointerLockControls(this.camera, this.domElement);
 
-        // Ekrana (canvas'a) tıklandığında fareyi ekrana kilitle:
-        this.domElement.addEventListener('click', () => {
-            this.controls.lock();
-        });
+        // SADECE gerçek bilgisayar faresi (mouse) ile tıklandığında imleci kilitle (Mobilde kilit açmasını engeller!):
+        this.onCanvasPointerDown = (e) => {
+            if (e.pointerType === 'mouse') {
+                this.controls.lock();
+            }
+        };
+        this.domElement.addEventListener('pointerdown', this.onCanvasPointerDown);
 
         // Kamerayı oyuncunun kafasının (göz) hizasına koyuyoruz:
         this.camera.position.set(
@@ -76,6 +79,7 @@ export class PlayerController {
 
         this.onTouchMove = (e) => {
             if (this.touchLookId === null) return;
+            e.preventDefault(); // Sürüklerken mobil tarayıcının sayfa yenileme/kaydırma hareketini engeller!
 
             for (let i = 0; i < e.changedTouches.length; i++) {
                 const touch = e.changedTouches[i];
@@ -150,6 +154,7 @@ export class PlayerController {
     // Oyun kapandığında hafızayı temizlemek için dinleyicileri kaldırıyoruz:
     dispose() {
         this.controls.dispose();
+        this.domElement.removeEventListener('pointerdown', this.onCanvasPointerDown);
         if (this.joystick) this.joystick.dispose(); // Joystick'i ekrandan kaldırır
         window.removeEventListener('keydown', this.onKeyDown);
         window.removeEventListener('keyup', this.onKeyUp);

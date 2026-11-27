@@ -1,5 +1,9 @@
 * {
   box-sizing: border-box;
+  touch-action: none; /* Tüm buton ve elemanlarda çift dokunma zoomunu kapatır */
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-touch-callout: none;
 }
 
 html, body, #root {
@@ -8,8 +12,6 @@ html, body, #root {
   margin: 0;
   padding: 0;
   overflow: hidden;
+  overscroll-behavior: none; /* Alttan/üstten çekince sayfa yenileme esnemesini engeller */
   background-color: #000;
-  user-select: none;
-  -webkit-user-select: none;
-  touch-action: none; /* Mobilde çift dokunmayla yakınlaştırmayı engeller */
 }

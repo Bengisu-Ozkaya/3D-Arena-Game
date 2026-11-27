@@ -70,21 +70,21 @@ function App() {
     })
     weaponSystemRef.current = weaponSystem
 
-    const handleMouseDown = (e) => {
-      // e.button === 0 (Sol Tık), oyun çalışıyorsa VE fare ekrana kilitliyse ateş et!
-      if (e.button === 0 && isRunningAnimRef.current && playerController.controls.isLocked) {
+    const handlePointerDown = (e) => {
+      // Sadece bilgisayar faresi (mouse) Sol Tık (button === 0) yaptığında ateş et!
+      if (e.pointerType === 'mouse' && e.button === 0 && isRunningAnimRef.current && playerController.controls.isLocked) {
         weaponSystem.startFiring()
       }
     }
 
-    const handleMouseUp = (e) => {
-      if (e.button === 0) {
+    const handlePointerUp = (e) => {
+      if (e.pointerType === 'mouse' && e.button === 0) {
         weaponSystem.stopFiring()
       }
     }
 
-    window.addEventListener('mousedown', handleMouseDown)
-    window.addEventListener('mouseup', handleMouseUp)
+    window.addEventListener('pointerdown', handlePointerDown)
+    window.addEventListener('pointerup', handlePointerUp)
 
     // Reload işlemi
     const handleReloadKey = (e) => {
@@ -128,8 +128,8 @@ function App() {
     // useEffect'in temizleme fonksiyonu:
     return () => {
       cancelAnimationFrame(animationFrameId)
-      window.removeEventListener('mousedown', handleMouseDown)
-      window.removeEventListener('mouseup', handleMouseUp)
+      window.removeEventListener('pointerdown', handlePointerDown)
+      window.removeEventListener('pointerup', handlePointerUp)
       window.removeEventListener('keydown', handleReloadKey)
       resizeObserver.disconnect()
       weaponSystem.dispose()
