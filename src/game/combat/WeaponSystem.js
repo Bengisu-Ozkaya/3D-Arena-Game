@@ -158,7 +158,7 @@ export class WeaponSystem {
 
         // İki nokta arasına çizgi geometrisi oluştur
         const geometry = new THREE.BufferGeometry().setFromPoints([startPoint, endPoint]);
-        const material = new THREE.LineBasicMaterial({ color: 0xee4b2b }); // Parlak sarı
+        const material = new THREE.LineBasicMaterial({ color: 0xee4b2b }); // Kırmızı mermi izi
         const tracerLine = new THREE.Line(geometry, material);
 
         this.scene.add(tracerLine);
@@ -196,5 +196,19 @@ export class WeaponSystem {
             oldestHole.geometry.dispose();
             oldestHole.material.dispose();
         }
+    }
+
+    dispose() {
+        if (this.gun) {
+            this.camera.remove(this.gun);
+            this.gun.geometry.dispose();
+            this.gun.material.dispose();
+        }
+        this.bulletHoles.forEach(hole => {
+            this.scene.remove(hole);
+            hole.geometry.dispose();
+            hole.material.dispose();
+        });
+        this.bulletHoles = [];
     }
 }

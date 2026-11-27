@@ -15,6 +15,11 @@ export class PlayerController {
         this.jumpStrength = 0.25 // Zıplama anındaki yukarı fırlatma gücü
         this.isGrounded = true;   // Karakter yere basıyor mu?
 
+        this.crouchSpeed = 0.075;  // Çömelirken yürüme hızı (yarı hız)
+        this.isCrouching = false;  // Şu an çömeliyor mu?
+        this.mobileCrouch = false; // Mobil butonla çömelme açık mı? (Bas-Aç / Bas-Kapat)
+        this.cameraOffsetY = 0.7;  // Göz hizası yüksekliği (Ayakta: 0.7, Çömelince: 0.15)
+
         // PointerLock Kontrollerini oluşturuyoruz
         this.controls = new PointerLockControls(this.camera, this.domElement);
 
@@ -116,8 +121,13 @@ export class PlayerController {
             //zıplama
             this.velocityY = this.jumpStrength
             this.isGrounded = false //space e bir daha basıldığında zıplamamak için
+            this.mobileCrouch = false
 
         }
+    }
+
+    toggleCrouch() {
+        this.mobileCrouch = !this.mobileCrouch;
     }
 
     checkCollision(x, y, z) {
@@ -162,6 +172,10 @@ export class PlayerController {
             if (this.keys['Space']) this.jump();
         }
 
+        //çömelmek için ctrl veya c tuşuna basılı tutuluyor mu?
+        const isKeyCrouch = this.controls.isLocked && (this.keys['ControlLeft'] || this.keys['KeyC']);
+        this.isCrouching = isKeyCrouch || this.mobileCrouch;
+
         // 2. Sanal Joystick Girdileri (Mobil)
         if (this.joystick.isActive) {
             forward += this.joystick.input.y;
@@ -179,8 +193,10 @@ export class PlayerController {
         const oldZ = this.player.position.z;
 
         // Kamerayı geçici olarak yeni hedef konuma ilerlet
-        this.controls.moveForward(forward * this.speed);
-        this.controls.moveRight(right * this.speed);
+        // Çömelme varsa çömelme hızında git yoksa normal hızda git
+        const currentSpeed = this.isCrouching ? this.crouchSpeed : this.speed;
+        this.controls.moveForward(forward * currentSpeed);
+        this.controls.moveRight(right * currentSpeed);
 
         const newX = this.camera.position.x;
         const newZ = this.camera.position.z;
@@ -230,6 +246,13 @@ export class PlayerController {
         // 7. Kamerayı oyuncunun onaylanmış (çarpışmasız) konumuna eşitle
         this.camera.position.x = this.player.position.x;
         this.camera.position.z = this.player.position.z;
-        this.camera.position.y = this.player.position.y + 0.7;
+
+        //çömelme durmunda kameranın bakış açısı
+        const targetOffset = this.isCrouching ? 0.15 : 0.7;
+        this.cameraOffsetY += (targetOffset - this.cameraOffsetY) * 0.2; // Yumuşak eğilip kalkma!
+        this.camera.position.y = this.player.position.y + this.cameraOffsetY;
+        this.player.scale.y = this.isCrouching ? 0.6 : 1.0; // Multiplayer için gövdeyi de küçült!
+
+
     }
 }
