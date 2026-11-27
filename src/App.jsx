@@ -14,8 +14,13 @@ function App() {
   //mobilde zıplama butonu için
   const playerControllerRef = useRef(null)
 
-  //ateş etme
+  //dış dünya ile silahın durumunu haberleştirmek için
   const weaponSystemRef = useRef(null)
+
+  //Mermi sayısı
+  const [ammoInfo, setAmmoInfo] = useState({ ammo: 30, max: 90, isReloading: false })
+
+
 
   const toggleRunning = () => {
     SetIsRunning(!isRunning)
@@ -59,8 +64,10 @@ function App() {
     const playerController = new PlayerController(player, camera, renderer.domElement, arenaMap.colliders)
     playerControllerRef.current = playerController
 
-    // 7.Silah kullanabilme
-    const weaponSystem = new WeaponSystem(scene, camera, arenaMap)
+    // 7.Silah Sistemi oluşturma
+    const weaponSystem = new WeaponSystem(scene, camera, arenaMap, (ammo, max, isReloading) => {
+      setAmmoInfo({ ammo, max, isReloading })
+    })
     weaponSystemRef.current = weaponSystem
 
     const handleMouseDown = (e) => {
@@ -78,6 +85,12 @@ function App() {
 
     window.addEventListener('mousedown', handleMouseDown)
     window.addEventListener('mouseup', handleMouseUp)
+
+    // Reload işlemi
+    const handleReloadKey = (e) => {
+      if (e.code === 'KeyR' && isRunningAnimRef.current) weaponSystem.reload()
+    }
+    window.addEventListener('keydown', handleReloadKey)
 
 
 
@@ -269,6 +282,25 @@ function App() {
         >
           🔫
         </button>
+      )}
+
+      {isRunning && (
+        <div
+          onPointerDown={(e) => {
+            e.stopPropagation();
+            weaponSystemRef.current?.reload();
+          }}
+          style={{
+            position: 'absolute', top: '20px', right: '25px',
+            padding: '10px 18px', backgroundColor: 'rgba(0,0,0,0.6)',
+            border: '1px solid rgba(255,255,255,0.3)', borderRadius: '8px',
+            color: ammoInfo.ammo <= 5 ? '#ff4444' : '#ffffff',
+            fontFamily: 'monospace', fontSize: '20px', fontWeight: 'bold',
+            cursor: 'pointer', zIndex: 30
+          }}
+        >
+          {ammoInfo.isReloading ? 'DOLDURULUYOR...' : `🔫 ${ammoInfo.ammo} / ${ammoInfo.max}`}
+        </div>
       )}
     </div>
   )

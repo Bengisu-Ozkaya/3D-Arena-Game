@@ -1,10 +1,11 @@
 import * as THREE from 'three';
 
 export class WeaponSystem {
-    constructor(scene, camera, arenaMap) {
+    constructor(scene, camera, arenaMap, onAmmoChange) {
         this.scene = scene
         this.camera = camera
         this.arenaMap = arenaMap
+        this.onAmmoChange = onAmmoChange;
 
         this.raycaster = new THREE.Raycaster(); // lazer tabanca
 
@@ -13,6 +14,11 @@ export class WeaponSystem {
         this.isFiring = false;   // Tetiğe basılı tutuluyor mu?
         this.fireRate = 130;     // İki mermi arası bekleme süresi (ms)
         this.lastShotTime = 0;   // Son merminin atıldığı zaman
+
+        this.maxAmmo = 30 // max cephane
+        this.ammo = 30 // başlangıçtaki mermi sayısı
+        this.isReloading = false
+        this.reserveAmmo = 90; // Cebimizdeki yedek mermi sayısı
 
         this.initGun()
 
@@ -59,9 +65,13 @@ export class WeaponSystem {
     }
 
     shoot() {
+        if (this.ammo <= 0 || this.isReloading) return //mermim bittiyse veya reload yapıyorsam ateş etme
+
         const now = performance.now(); // Şu anki milisaniye
         if (now - this.lastShotTime < this.fireRate) return; // 130ms dolmadıysa ateş etme!
         this.lastShotTime = now; // Son atış saatini güncelle
+        this.ammo -= 1
+        this.onAmmoChange?.(this.ammo, this.reserveAmmo, this.isReloading);
 
         // Geri tepme (Recoil) efekti: Silahı 7cm geriye çekip 70ms sonra yerine oturt
         this.gun.position.z = -0.38;
@@ -113,6 +123,32 @@ export class WeaponSystem {
         }
 
 
+    }
+
+    reload() {
+        if (this.isReloading || (this.ammo == this.maxAmmo) || this.reserveAmmo <= 0) {
+            return
+        } else {
+            this.isReloading = true
+            this.onAmmoChange?.(this.ammo, this.reserveAmmo, this.isReloading);
+
+            this.gun.rotation.x = -0.4
+
+            const needed = this.maxAmmo - this.ammo;
+
+            setTimeout(() => {
+                //mermi doldurma
+                const toLoad = Math.min(needed, this.reserveAmmo);
+                this.ammo += toLoad;         // Şarjöre ekle (7 + 23 = 30 veya 7 + 10 = 17)
+                this.reserveAmmo -= toLoad;  // Cepten düş (90 - 23 = 67 veya 10 - 10 = 0)
+
+                this.isReloading = false
+                this.onAmmoChange?.(this.ammo, this.reserveAmmo, this.isReloading);
+
+                this.gun.rotation.x = 0
+            }, 1200);
+
+        }
     }
 
     createTracer(endPoint) {
