@@ -9,13 +9,13 @@ export class PlayerController {
         this.domElement = domElement;
         this.colliders = colliders
 
-        this.speed = 0.15;        // Karakterin yürüme hızı 
+        this.speed = 9.0;        // Karakterin yürüme hızı 
         this.velocityY = 0;       // Dikey anlık hız
-        this.gravity = 0.012;     // Yerçekimi ivmesi 
-        this.jumpStrength = 0.25 // Zıplama anındaki yukarı fırlatma gücü
+        this.gravity = 42;     // Yerçekimi ivmesi 
+        this.jumpStrength = 14.8 // Zıplama anındaki yukarı fırlatma gücü
         this.isGrounded = true;   // Karakter yere basıyor mu?
 
-        this.crouchSpeed = 0.075;  // Çömelirken yürüme hızı (yarı hız)
+        this.crouchSpeed = 4.5;  // Çömelirken yürüme hızı (yarı hız)
         this.isCrouching = false;  // Şu an çömeliyor mu?
         this.mobileCrouch = false; // Mobil butonla çömelme açık mı? (Bas-Aç / Bas-Kapat)
         this.cameraOffsetY = 0.7;  // Göz hizası yüksekliği (Ayakta: 0.7, Çömelince: 0.15)
@@ -159,9 +159,12 @@ export class PlayerController {
         window.removeEventListener('touchcancel', this.onTouchEnd);
     }
 
-    update() {
+    update(delta = 0.016) {
         let forward = 0;
         let right = 0;
+
+        // Sekme arka planda kalıp 5 saniye sonra dönülürse duvar içinden geçmemek için max 0.05sn ile sınırla:
+        const dt = Math.min(delta, 0.05);
 
         // 1. Klavye Girdileri (Sadece masaüstünde fare kilitliyken çalışsın)
         if (this.controls.isLocked) {
@@ -195,8 +198,8 @@ export class PlayerController {
         // Kamerayı geçici olarak yeni hedef konuma ilerlet
         // Çömelme varsa çömelme hızında git yoksa normal hızda git
         const currentSpeed = this.isCrouching ? this.crouchSpeed : this.speed;
-        this.controls.moveForward(forward * currentSpeed);
-        this.controls.moveRight(right * currentSpeed);
+        this.controls.moveForward(forward * currentSpeed * dt);
+        this.controls.moveRight(right * currentSpeed * dt);
 
         const newX = this.camera.position.x;
         const newZ = this.camera.position.z;
@@ -213,8 +216,8 @@ export class PlayerController {
 
         // 5. DİKEY HAREKET (Yerçekimi ve Kutuların Üstüne Çıkma)
         this.isGrounded = false; // Havada varsay, yere veya kutuya değerse true yapacağız
-        this.velocityY -= this.gravity;
-        this.player.position.y += this.velocityY;
+        this.velocityY -= this.gravity * dt
+        this.player.position.y += this.velocityY * dt
 
         // Y ekseninde bir kutuya çarptık mı?
         const hitBox = this.checkCollision(
@@ -249,7 +252,7 @@ export class PlayerController {
 
         //çömelme durmunda kameranın bakış açısı
         const targetOffset = this.isCrouching ? 0.15 : 0.7;
-        this.cameraOffsetY += (targetOffset - this.cameraOffsetY) * 0.2; // Yumuşak eğilip kalkma!
+        this.cameraOffsetY += (targetOffset - this.cameraOffsetY) * Math.min(1, 12 * dt); // yumuşak eğilip kalkma
         this.camera.position.y = this.player.position.y + this.cameraOffsetY;
         this.player.scale.y = this.isCrouching ? 0.6 : 1.0; // Multiplayer için gövdeyi de küçült!
 

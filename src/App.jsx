@@ -38,8 +38,8 @@ function App() {
     const arenaMap = new ArenaMap(scene)
 
     // 3. Renderer oluşturma
-    const width = window.innerWidth // Daha responsive
-    const height = window.innerHeight
+    const width = mountRef.current.clientWidth
+    const height = mountRef.current.clientHeight
 
     const renderer = new THREE.WebGLRenderer({ antialias: true })
     renderer.setSize(width, height)
@@ -97,21 +97,26 @@ function App() {
 
     // Pencere veya telefon boyutu değiştiğinde otomatik uyum sağla:
     const handleResize = () => {
-      const w = window.innerWidth
-      const h = window.innerHeight
+      if (!mountRef.current) return
+      const w = mountRef.current.clientWidth
+      const h = mountRef.current.clientHeight
       camera.aspect = w / h
-      camera.updateProjectionMatrix() // Kameranın projeksiyon matrisini yeniler
+      camera.updateProjectionMatrix()
       renderer.setSize(w, h)
     }
-    window.addEventListener('resize', handleResize)
+    const resizeObserver = new ResizeObserver(handleResize)
+    resizeObserver.observe(mountRef.current)
 
     let animationFrameId
+    const clock = new THREE.Clock() //ekran hızları değişse de aynı hızda hareket için
 
     const animate = () => {
       animationFrameId = requestAnimationFrame(animate)
+      const delta = clock.getDelta() // İki kare arasında geçen saniye (Örn: 60Hz'de 0.016sn, 120Hz'de 0.008sn)
+
 
       if (isRunningAnimRef.current) {
-        playerController.update()
+        playerController.update(delta)
         weaponSystem.update()
       }
 
@@ -126,7 +131,7 @@ function App() {
       window.removeEventListener('mousedown', handleMouseDown)
       window.removeEventListener('mouseup', handleMouseUp)
       window.removeEventListener('keydown', handleReloadKey)
-      window.removeEventListener('resize', handleResize)
+      resizeObserver.disconnect()
       weaponSystem.dispose()
       arenaMap.dispose()
       renderer.dispose()
@@ -140,22 +145,23 @@ function App() {
   return (
     <div
       style={{
-        position: 'relative',
-        width: '100vw',
-        height: '100vh',
+        position: 'fixed',
+        inset: 0,
+        width: '100%',
+        height: '100%',
         margin: 0,
         padding: 0,
         overflow: 'hidden',
         backgroundColor: '#000'
       }}
     >
-      {/* 1. Three.js 3D Tuvali */}
+      {/* Three.js 3D Tuvali */}
       <div
         ref={mountRef}
         style={{ width: '100%', height: '100%' }}
       />
 
-      {/* 2. Başlat Butonu */}
+      {/* Başlat Butonu */}
       {!isRunning && (
         <button
           onClick={toggleRunning}
@@ -177,7 +183,7 @@ function App() {
         </button>
       )}
 
-      {/* 3. Durdur Butonu */}
+      {/* Durdur Butonu */}
       {isRunning && (
         <button
           onClick={toggleRunning}
@@ -214,7 +220,7 @@ function App() {
         </div>
       )}
 
-      {/* 5. Mobil Zıplama Butonu (Oyun alanının SAĞ ALT köşesine şıkça yerleşir) */}
+      {/* Zıplama Butonu */}
       {isRunning && (
         <button
           onPointerDown={(e) => {
@@ -223,15 +229,15 @@ function App() {
           }}
           style={{
             position: 'absolute',
-            bottom: '150px',
-            right: '40px',
-            width: '64px',
-            height: '64px',
+            bottom: '98px',
+            right: '24px',
+            width: '50px',
+            height: '50px',
             borderRadius: '50%',
             backgroundColor: 'rgba(255, 255, 255, 0.15)',
             border: '2px solid rgba(255, 255, 255, 0.4)',
             color: '#ffffff',
-            fontSize: '20px',
+            fontSize: '16px',
             fontWeight: 'bold',
             display: 'flex',
             alignItems: 'center',
@@ -248,6 +254,41 @@ function App() {
         </button>
       )}
 
+      {/* Eğilme Butonu */}
+      {isRunning && (
+        <button
+          onPointerDown={(e) => {
+            e.stopPropagation();
+            playerControllerRef.current?.toggleCrouch();
+          }}
+          style={{
+            position: 'absolute',
+            bottom: '20px',
+            right: '98px',
+            width: '50px',
+            height: '50px',
+            borderRadius: '50%',
+            backgroundColor: 'rgba(255, 255, 255, 0.15)',
+            border: '2px solid rgba(255, 255, 255, 0.4)',
+            color: '#ffffff',
+            fontSize: '16px',
+            fontWeight: 'bold',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: 'pointer',
+            userSelect: 'none',
+            touchAction: 'none',
+            zIndex: 30,
+            backdropFilter: 'blur(6px)',
+            boxShadow: '0 4px 10px rgba(0, 0, 0, 0.3)'
+          }}
+        >
+          ▼
+        </button>
+      )}
+
+      {/* Ateş Etme Butonu */}
       {isRunning && (
         <button
           onPointerDown={(e) => {
@@ -264,8 +305,8 @@ function App() {
           }}
           style={{
             position: 'absolute',
-            bottom: '80px',
-            right: '40px',
+            bottom: '22px',
+            right: '26px',
             width: '64px',
             height: '64px',
             borderRadius: '50%',
@@ -289,38 +330,7 @@ function App() {
         </button>
       )}
 
-      {isRunning && (
-        <button
-          onPointerDown={(e) => {
-            e.stopPropagation();
-            playerControllerRef.current?.toggleCrouch();
-          }}
-          style={{
-            position: 'absolute',
-            bottom: '80px',
-            right: '110px',
-            width: '64px',
-            height: '64px',
-            borderRadius: '50%',
-            backgroundColor: 'rgba(255, 255, 255, 0.15)',
-            border: '2px solid rgba(255, 255, 255, 0.4)',
-            color: '#ffffff',
-            fontSize: '20px',
-            fontWeight: 'bold',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            cursor: 'pointer',
-            userSelect: 'none',
-            touchAction: 'none',
-            zIndex: 30,
-            backdropFilter: 'blur(6px)',
-            boxShadow: '0 4px 10px rgba(0, 0, 0, 0.3)'
-          }}
-        >
-          ▼
-        </button>
-      )}
+
 
 
       {isRunning && (
